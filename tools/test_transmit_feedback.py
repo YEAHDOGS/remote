@@ -8,7 +8,7 @@ banner:
   1. State shape: transmitError is a mutableStateOf nullable String with a
      private setter; clearTransmitError() clears it.
   2. Single funnel: every transmit path (magic probe, manual send, blast,
-     hold-to-repeat x2) routes through the private transmitAndReport helper —
+     hold-to-repeat x2, macro step) routes through the private transmitAndReport helper —
      exactly one raw sender.transmit call site exists, inside the helper.
   3. Reporting semantics: a failed transmit sets transmitError to
      TRANSMIT_ERROR_MSG; a success clears it; the state write happens on
@@ -71,8 +71,8 @@ check(raw_calls == 1,
 check("private suspend fun transmitAndReport(" in vm,
       "transmitAndReport must be a private suspend helper")
 funnel_calls = vm.count("transmitAndReport(") - 1  # minus the definition
-check(funnel_calls == 5,
-      f"all 5 transmit paths (magic, manual, blast, repeat x2) must call transmitAndReport; found {funnel_calls}")
+check(funnel_calls == 6,
+      f"all 6 transmit paths (magic, manual, blast, repeat x2, macro step) must call transmitAndReport; found {funnel_calls}")
 
 # --- 3. reporting semantics ------------------------------------------------
 check("withContext(Dispatchers.IO) { sender.transmit(freqHz, pattern) }" in vm,
