@@ -81,7 +81,6 @@ private fun AppTabs(vm: RemoteViewModel) {
             }
         }
     }
-}
 
 @Composable
 private fun NoIrScreen() {
