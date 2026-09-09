@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ import net.dogs.remote.ir.IrVariant
  * Blast mode sends the tapped button across every variant (rate-limited,
  * cancellable) — the manual answer to "try this button everywhere".
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ManualScreen(vm: RemoteViewModel) {
     val db = vm.db
