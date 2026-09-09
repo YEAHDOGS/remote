@@ -123,7 +123,6 @@ fun ManualScreen(vm: RemoteViewModel) {
         } else {
             Text("No variant selected.")
         }
-        Spacer(Modifier.height(0.dp))
     }
 }
 
