@@ -99,6 +99,22 @@ fun ManualScreen(vm: RemoteViewModel) {
             )
         }
 
+        val transmitError = vm.transmitError
+        if (transmitError != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    transmitError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedButton(onClick = { vm.clearTransmitError() }) { Text("Dismiss") }
+            }
+        }
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -70,6 +70,36 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     var blastMode by mutableStateOf(false)
 
     /**
+     * Last transmit-failure message, or null when the last transmit
+     * succeeded (or nothing has been sent yet). Transmits used to fail
+     * silently — a tap that did nothing looked identical to a tap the TV
+     * ignored. Surfacing the failure lets the user tell "phone problem"
+     * apart from "wrong code". Write only through [transmitAndReport];
+     * dismiss from the UI with [clearTransmitError].
+     */
+    var transmitError: String? by mutableStateOf(null)
+        private set
+
+    /** Dismiss the transmit-failure notice (also auto-clears on next success). */
+    fun clearTransmitError() {
+        transmitError = null
+    }
+
+    /**
+     * Single funnel for every IR transmit in this ViewModel: runs the
+     * blocking transmit on Dispatchers.IO, then reports the result on the
+     * main thread. A failed transmit sets [transmitError]; a success
+     * clears any previous failure. Returns the transmit result.
+     */
+    private suspend fun transmitAndReport(freqHz: Int, pattern: IntArray): Boolean {
+        val ok = withContext(Dispatchers.IO) { sender.transmit(freqHz, pattern) }
+        withContext(Dispatchers.Main) {
+            transmitError = if (ok) null else TRANSMIT_ERROR_MSG
+        }
+        return ok
+    }
+
+    /**
      * Which button the Magic sweep probes with. Write through
      * [setMagicProbeButtonId], which rejects anything outside
      * [MAGIC_PROBE_OPTIONS], so the probe can never become an unknown id.
@@ -124,7 +154,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                 magicState = MagicState.Running(i, variants.size, v.id)
                 val btn = v.buttons[probeButtonId]
                 if (btn != null) {
-                    withContext(Dispatchers.IO) { sender.transmit(btn.freqHz, btn.pattern) }
+                    transmitAndReport(btn.freqHz, btn.pattern)
                     attemptLog.log(
                         Attempt(System.currentTimeMillis(), v.id, v.label, probeButtonId, worked = false),
                     )
@@ -174,12 +204,12 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val btn = variant.buttons[buttonId] ?: return
-        viewModelScope.launch(Dispatchers.IO) {
-            sender.transmit(btn.freqHz, btn.pattern)
+        viewModelScope.launch {
+            transmitAndReport(btn.freqHz, btn.pattern)
             attemptLog.log(
                 Attempt(System.currentTimeMillis(), variant.id, variant.label, buttonId, worked = false),
             )
-            withContext(Dispatchers.Main) { attempts = attemptLog.list() }
+            attempts = attemptLog.list()
         }
     }
 
@@ -193,7 +223,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
                 blastState = BlastState.Running(i, variants.size, buttonId)
                 val btn = v.buttons[buttonId]
                 if (btn != null) {
-                    withContext(Dispatchers.IO) { sender.transmit(btn.freqHz, btn.pattern) }
+                    transmitAndReport(btn.freqHz, btn.pattern)
                     attemptLog.log(
                         Attempt(System.currentTimeMillis(), v.id, v.label, buttonId, worked = false),
                     )
@@ -225,17 +255,15 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         val variant = db.variantsById[variantId] ?: return
         val btn = variant.buttons[buttonId] ?: return
         repeatJob = viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                sender.transmit(btn.freqHz, btn.pattern)
-                attemptLog.log(
-                    Attempt(System.currentTimeMillis(), variant.id, variant.label, buttonId, worked = false),
-                )
-            }
-            withContext(Dispatchers.Main) { attempts = attemptLog.list() }
+            transmitAndReport(btn.freqHz, btn.pattern)
+            attemptLog.log(
+                Attempt(System.currentTimeMillis(), variant.id, variant.label, buttonId, worked = false),
+            )
+            attempts = attemptLog.list()
             delay(REPEAT_INITIAL_DELAY_MS)
             while (true) {
                 ensureActive()
-                withContext(Dispatchers.IO) { sender.transmit(btn.freqHz, btn.pattern) }
+                transmitAndReport(btn.freqHz, btn.pattern)
                 delay(REPEAT_INTERVAL_MS)
             }
         }
@@ -290,5 +318,8 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         const val REPEAT_INITIAL_DELAY_MS = 450L
         /** Hold-to-repeat: interval between repeated transmits. */
         const val REPEAT_INTERVAL_MS = 220L
+        /** Surfaced when IrSender.transmit returns false (no emitter / framework failure). */
+        const val TRANSMIT_ERROR_MSG =
+            "IR transmit failed — the phone's emitter may be busy or unavailable. Check it and try again."
     }
 }
