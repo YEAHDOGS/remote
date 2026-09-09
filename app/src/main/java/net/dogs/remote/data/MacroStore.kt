@@ -29,34 +29,58 @@ data class IrMacro(
  * Everything stored goes through [sanitize]: blank names are rejected,
  * steps are capped at [MAX_STEPS], blank button ids are dropped, and delays
  * are coerced into bounds. A macro id that already exists is replaced
- * (update); new ids are rejected once [MAX_MACROS] is reached. The playback
- * side never trusts the stored data either — see RemoteViewModel.runMacro.
+ * (update); new ids are rejected once [MAX_MACROS] is reached. The read
+ * side never trusts the stored data either — [list] re-sanitizes on every
+ * load and tolerates corrupt JSON, so a botched write or a stale backup
+ * restore can never crash the app or resurrect out-of-bounds values.
+ * The playback side double-checks too — see RemoteViewModel.runMacro.
  */
 class MacroStore(context: Context) {
     private val prefs =
         context.getSharedPreferences("dogs_remote_macros", Context.MODE_PRIVATE)
 
+    /**
+     * Load all macros. Never throws and never returns unsanitized data:
+     * a corrupt prefs string (botched write, stale restore) yields an empty
+     * list instead of crashing the app at startup — [RemoteViewModel] builds
+     * its state from this at init. Malformed entries are skipped, every
+     * entry is re-run through [sanitize] so legacy rows can't resurrect
+     * out-of-bounds delays or overlong names, and the list is capped at
+     * [MAX_MACROS] even if the stored array grew past it by other means.
+     * Corruption heals naturally: the next [save] rewrites clean data.
+     */
     fun list(): List<IrMacro> {
-        val raw = prefs.getString(KEY, "[]") ?: "[]"
-        val arr = JSONArray(raw)
-        return List(arr.length()) { i ->
-            val o = arr.getJSONObject(i)
-            val steps = mutableListOf<MacroStep>()
-            val sArr = o.optJSONArray("steps") ?: JSONArray()
-            for (j in 0 until sArr.length()) {
-                val s = sArr.getJSONObject(j)
-                steps += MacroStep(
-                    buttonId = s.getString("buttonId"),
-                    delayAfterMs = s.optLong("delayAfterMs", STEP_DELAY_DEFAULT_MS),
-                )
+        val arr = try {
+            JSONArray(prefs.getString(KEY, "[]") ?: "[]")
+        } catch (e: Exception) {
+            return emptyList()
+        }
+        return List(minOf(arr.length(), MAX_MACROS)) { i ->
+            try {
+                parseMacro(arr.getJSONObject(i))
+            } catch (e: Exception) {
+                null
             }
-            IrMacro(
-                id = o.getString("id"),
-                name = o.getString("name"),
-                variantId = o.getString("variantId"),
-                steps = steps,
+        }.mapNotNull { it }.mapNotNull { sanitize(it) }
+    }
+
+    /** Parse one stored macro object; throws on malformed shapes. */
+    private fun parseMacro(o: JSONObject): IrMacro {
+        val steps = mutableListOf<MacroStep>()
+        val sArr = o.optJSONArray("steps") ?: JSONArray()
+        for (j in 0 until sArr.length()) {
+            val s = sArr.getJSONObject(j)
+            steps += MacroStep(
+                buttonId = s.getString("buttonId"),
+                delayAfterMs = s.optLong("delayAfterMs", STEP_DELAY_DEFAULT_MS),
             )
         }
+        return IrMacro(
+            id = o.getString("id"),
+            name = o.getString("name"),
+            variantId = o.getString("variantId"),
+            steps = steps,
+        )
     }
 
     /**

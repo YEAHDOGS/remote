@@ -142,6 +142,23 @@ check("Tab.Macros -> MacrosScreen(vm)" in main,
 check("import net.dogs.remote.ui.MacrosScreen" in main,
       "MainActivity must import MacrosScreen")
 
+# --- 5. read-path hardening -------------------------------------------------
+# list() feeds ViewModel init — corrupt prefs data must never crash the app
+# at startup, and legacy rows must be re-sanitized on load.
+lm = re.search(r"fun list\(\): List<IrMacro> \{(.*?)\n    \n    \}", store, re.S)
+if lm is None:
+    lm = re.search(r"fun list\(\): List<IrMacro> \{(.*?)\n    \}\n\n    /\*\*", store, re.S)
+check(lm is not None, "list() body must be parseable")
+lbody = lm.group(1) if lm else ""
+check("catch" in lbody and "return emptyList()" in lbody,
+      "list() must catch corrupt JSON and return an empty list instead of crashing")
+check("minOf(arr.length(), MAX_MACROS)" in lbody,
+      "list() must cap the parsed list at MAX_MACROS even if storage grew past it")
+check(re.search(r"\.mapNotNull\s*\{\s*sanitize\(it\)\s*\}", lbody) is not None,
+      "list() must re-sanitize every loaded entry (legacy/stale rows)")
+check("parseMacro" in lbody and "private fun parseMacro" in store,
+      "per-entry parsing must be isolated so one malformed entry doesn't nuke the rest")
+
 if fails:
     print(f"{len(fails)} FAILURES:")
     for f in fails:
