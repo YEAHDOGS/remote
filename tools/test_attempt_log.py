@@ -11,6 +11,9 @@ data/AttemptLog.kt:
      isolated, bad rows are skipped.
   3. The parsed list is capped at MAX even if the stored array grew past it
      by other means.
+  4. sanitize() exists on both sides: log() drops invalid attempts on
+     write; list() re-sanitizes every loaded entry so legacy/stale rows
+     can't resurrect blank ids or overlong labels.
 
 Structural checks parse the Kotlin source directly — this test and the app
 can't drift apart without failing loudly.
@@ -65,6 +68,27 @@ check("minOf(arr.length(), MAX)" in lbody,
 m = re.search(r"const val MAX\s*=\s*(\d+)", log)
 check(m is not None and 1 <= int(m.group(1)) <= 1000,
       "MAX must be a sane append-only cap")
+
+# --- write side: sanitize on log() --------------------------------------------
+check("fun sanitize(attempt: Attempt): Attempt?" in log,
+      "AttemptLog must expose a sanitizer that can reject an attempt")
+check("val clean = sanitize(attempt) ?: return" in log,
+      "log() must sanitize on write and drop invalid attempts")
+check("attempt.variantId.isBlank() || attempt.button.isBlank()" in log,
+      "sanitize must reject attempts with blank variant or button ids")
+check("variantLabel.trim().take(LABEL_MAX_LEN)" in log,
+      "sanitize must trim and cap the variant label")
+check("button.trim().take(LABEL_MAX_LEN)" in log,
+      "sanitize must trim and cap the button id")
+check("ts.coerceAtLeast(0L)" in log,
+      "sanitize must clamp negative timestamps to 0 (botched data only)")
+m2 = re.search(r"const val LABEL_MAX_LEN\s*=\s*(\d+)", log)
+check(m2 is not None and 1 <= int(m2.group(1)) <= 128,
+      "LABEL_MAX_LEN must be a sane label cap")
+
+# --- read side: re-sanitize on load -----------------------------------------
+check(re.search(r"\.mapNotNull\s*\{\s*it\s*\}\s*\.mapNotNull\s*\{\s*sanitize\(it\)\s*\}", lbody) is not None,
+      "list() must re-sanitize every loaded entry (legacy/stale rows)")
 
 # --- write side unchanged -----------------------------------------------------
 check(".take(MAX)" in log, "log() must still cap persisted rows at MAX")

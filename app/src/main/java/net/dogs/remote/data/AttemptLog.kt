@@ -18,9 +18,12 @@ data class Attempt(
  * This is the attempt-analysis log: every Magic Mode probe and every manual
  * or blast transmit is recorded here.
  *
- * The read side never trusts the stored data: [list] tolerates corrupt JSON
- * and skips malformed entries, so a botched write or a stale backup restore
- * can never crash the app at startup — [RemoteViewModel] builds its state
+ * Nothing stored is trusted: [log] re-sanitizes every attempt on the write
+ * side (dropping blank button/variant ids and capping label lengths), and
+ * the read side never trusts the stored data either — [list] tolerates
+ * corrupt JSON, skips malformed entries, and re-runs every entry through
+ * [sanitize] so a stale backup restore can never resurrect out-of-bounds
+ * values or crash the app at startup — [RemoteViewModel] builds its state
  * from this at init.
  */
 class AttemptLog(context: Context) {
@@ -28,15 +31,18 @@ class AttemptLog(context: Context) {
         context.getSharedPreferences("dogs_remote_log", Context.MODE_PRIVATE)
 
     fun log(attempt: Attempt) {
-        persist((listOf(attempt) + list()).take(MAX))
+        val clean = sanitize(attempt) ?: return
+        persist((listOf(clean) + list()).take(MAX))
     }
 
     /**
      * Load all attempts, newest first. Never throws: a corrupt prefs string
      * (botched write, stale backup restore) yields an empty list instead of
      * crashing the app at startup. Malformed entries are skipped
-     * individually so one bad row doesn't nuke the rest, and the list is
-     * capped at [MAX] even if the stored array grew past it by other means.
+     * individually so one bad row doesn't nuke the rest, every entry is
+     * re-run through [sanitize] so legacy rows can't resurrect blank ids or
+     * overlong labels, and the list is capped at [MAX] even if the stored
+     * array grew past it by other means.
      */
     fun list(): List<Attempt> {
         val arr = try {
@@ -50,7 +56,7 @@ class AttemptLog(context: Context) {
             } catch (e: Exception) {
                 null
             }
-        }.mapNotNull { it }
+        }.mapNotNull { it }.mapNotNull { sanitize(it) }
     }
 
     /** Parse one stored attempt; throws on malformed shapes. */
@@ -97,5 +103,27 @@ class AttemptLog(context: Context) {
     private companion object {
         const val KEY = "attempts"
         const val MAX = 200
+        /** Log labels come from the IR database; cap them anyway — prefs are small and a stale restore can hold junk. */
+        const val LABEL_MAX_LEN = 64
+
+        /**
+         * Enforce every invariant above. Returns null when the attempt has a
+         * blank variant id or a blank button id (unmatchable, unfilterable
+         * rows); otherwise returns the trimmed/capped copy. Timestamps are
+         * clamped to >= 0 — a negative ts only ever comes from botched data.
+         * Never trusts stored data: a row loaded from disk may predate these
+         * bounds, so [log] sanitizes on every write and [list] re-sanitizes
+         * on every load.
+         */
+        fun sanitize(attempt: Attempt): Attempt? {
+            if (attempt.variantId.isBlank() || attempt.button.isBlank()) {
+                return null
+            }
+            return attempt.copy(
+                ts = attempt.ts.coerceAtLeast(0L),
+                variantLabel = attempt.variantLabel.trim().take(LABEL_MAX_LEN),
+                button = attempt.button.trim().take(LABEL_MAX_LEN),
+            )
+        }
     }
 }
