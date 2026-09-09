@@ -27,3 +27,6 @@ val BUTTON_ORDER: List<String> = listOf(
 )
 
 fun buttonLabel(id: String): String = BUTTON_LABELS[id] ?: id
+
+/** Keys where holding the button down repeats the transmit (volume / channel). */
+val REPEATABLE_BUTTONS: Set<String> = setOf("vol_up", "vol_down", "ch_up", "ch_down")

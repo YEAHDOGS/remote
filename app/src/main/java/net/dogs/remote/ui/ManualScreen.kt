@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.gestures.detectPressGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import net.dogs.remote.ir.IrBrand
 import net.dogs.remote.ir.IrVariant
@@ -114,9 +116,29 @@ fun ManualScreen(vm: RemoteViewModel) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 items(ids) { id ->
+                    val repeatable = REPEATABLE_BUTTONS.contains(id) && !vm.blastMode
                     Button(
-                        onClick = { vm.sendButton(variant.id, id) },
-                        modifier = Modifier.height(56.dp),
+                        onClick = { if (!repeatable) vm.sendButton(variant.id, id) },
+                        modifier = Modifier
+                            .height(56.dp)
+                            .then(
+                                if (repeatable) {
+                                    Modifier.pointerInput(variant.id, id, vm.blastMode) {
+                                        detectPressGestures(
+                                            onPress = {
+                                                vm.startRepeat(variant.id, id)
+                                                try {
+                                                    tryAwaitRelease()
+                                                } finally {
+                                                    vm.stopRepeat()
+                                                }
+                                            },
+                                        )
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     ) { Text(buttonLabel(id)) }
                 }
             }
