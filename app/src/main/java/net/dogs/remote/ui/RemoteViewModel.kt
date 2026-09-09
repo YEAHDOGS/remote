@@ -154,6 +154,42 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         blastState = BlastState.Idle
     }
 
+    // ---------------- hold-to-repeat ----------------
+
+    private var repeatJob: Job? = null
+
+    /**
+     * Hold-to-repeat for volume/channel keys: fires once immediately, then
+     * repeats every [REPEAT_INTERVAL_MS] after [REPEAT_INITIAL_DELAY_MS]
+     * until [stopRepeat] is called (finger lift). A single attempt is logged
+     * per press so the log doesn't flood.
+     */
+    fun startRepeat(variantId: String, buttonId: String) {
+        stopRepeat()
+        val variant = db.variantsById[variantId] ?: return
+        val btn = variant.buttons[buttonId] ?: return
+        repeatJob = viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                sender.transmit(btn.freqHz, btn.pattern)
+                attemptLog.log(
+                    Attempt(System.currentTimeMillis(), variant.id, variant.label, buttonId, worked = false),
+                )
+            }
+            withContext(Dispatchers.Main) { attempts = attemptLog.list() }
+            delay(REPEAT_INITIAL_DELAY_MS)
+            while (true) {
+                ensureActive()
+                withContext(Dispatchers.IO) { sender.transmit(btn.freqHz, btn.pattern) }
+                delay(REPEAT_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun stopRepeat() {
+        repeatJob?.cancel()
+        repeatJob = null
+    }
+
     // ---------------- profiles ----------------
 
     fun addProfile(name: String, variantId: String) {
@@ -194,5 +230,9 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         const val MAGIC_GAP_MS = 650L
         /** Gap between blast transmits. */
         const val BLAST_GAP_MS = 400L
+        /** Hold-to-repeat: delay before repeating starts. */
+        const val REPEAT_INITIAL_DELAY_MS = 450L
+        /** Hold-to-repeat: interval between repeated transmits. */
+        const val REPEAT_INTERVAL_MS = 220L
     }
 }
