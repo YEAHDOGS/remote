@@ -88,6 +88,17 @@ fun ManualScreen(vm: RemoteViewModel) {
             )
         }
 
+        if (variant != null && vm.unsupportedVariantIds.contains(variant.id)) {
+            val freq = variant.buttons.values.firstOrNull()?.freqHz
+            Text(
+                "Carrier warning: this phone's IR emitter may not support " +
+                    (if (freq != null) "${freq / 1000}kHz" else "this variant's carrier") +
+                    " — buttons may not work on this device.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),

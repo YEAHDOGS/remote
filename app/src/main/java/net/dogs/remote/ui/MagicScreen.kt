@@ -50,6 +50,18 @@ fun MagicScreen(vm: RemoteViewModel) {
                 "When the TV responds, tap IT WORKED.",
             style = MaterialTheme.typography.bodyMedium,
         )
+        val unsupported = vm.unsupportedVariantIds
+        if (unsupported.isNotEmpty()) {
+            val labels = unsupported.mapNotNull { vm.db.variantsById[it]?.label }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Carrier warning: this phone's IR emitter may not transmit " +
+                    labels.joinToString(", ") +
+                    " — those variants can't be probed reliably here.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Spacer(Modifier.height(32.dp))
 
         when (state) {
