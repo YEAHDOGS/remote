@@ -23,6 +23,7 @@ import net.dogs.remote.ir.IrDatabase
 import net.dogs.remote.ir.IrSender
 import net.dogs.remote.ir.isCarrierSupported
 import net.dogs.remote.ir.loadIrDatabase
+import net.dogs.remote.ir.magicSweepOrder
 import java.util.UUID
 
 /** Magic Mode state machine. */
@@ -151,13 +152,23 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- magic mode ----------------
 
-    /** Tries the selected probe signal across every variant in magic order (Samsung first). */
+    /**
+     * Tries the selected probe signal across every variant.
+     *
+     * The sweep runs in *learned* order ([magicSweepOrder]): variants that
+     * have worked before go first (most recent first), so repeat venues
+     * resolve in seconds; everything else keeps the shipped magic order
+     * behind them. Blast Mode deliberately stays on the shipped order — it
+     * is the exhaustive manual sweep, not the smart one.
+     */
     fun startMagic() {
         if (magicJob?.isActive == true) return
         // Captured here: changing the selector mid-sweep must not rewire a
         // sweep already in flight.
         val probeButtonId = magicProbeButtonId
-        val variants = db.magicVariants
+        // Captured here for the same reason — new attempts logged by an
+        // earlier run must not reorder a sweep already in flight.
+        val variants = magicSweepOrder(db.magicVariants, attempts)
         magicJob = viewModelScope.launch {
             for ((i, v) in variants.withIndex()) {
                 ensureActive()
