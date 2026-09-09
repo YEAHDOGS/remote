@@ -7,7 +7,13 @@ OnePlus 12R) into a universal TV remote.
 
 - **Magic Mode** — one tap rapidly tries TV volume-up codes across variants,
   Samsung first. The moment the TV responds you tap **IT WORKED**, give the
-  venue a nickname, and the brand/variant is saved as a profile.
+  venue a nickname, and the brand/variant is saved as a profile. The sweep
+  order is learned: variants with prior WORKED attempts are tried first
+  (most recent first), so repeat venues resolve in seconds; variants that
+  have never worked keep the shipped order behind them. Blast Mode stays on
+  the shipped order — the exhaustive manual sweep, not the smart one.
+  Ordering logic is the pure function `ir/MagicOrder.kt::magicSweepOrder`,
+  regression-tested by `tools/test_magic_order.py`.
 - **Manual Mode** — pick brand → variant and get a full remote pad: power,
   volume, channel, mute, input, arrows/OK, menu/exit/guide. Flip on
   **blast mode** to fire one button across *all* variants (rate-limited,
