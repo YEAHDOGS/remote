@@ -48,8 +48,14 @@ private fun App(vm: RemoteViewModel = viewModel()) {
     MaterialTheme {
         if (!vm.sender.hasEmitter) {
             NoIrScreen()
-            return
+        } else {
+            AppTabs(vm)
         }
+    }
+}
+
+@Composable
+private fun AppTabs(vm: RemoteViewModel) {
         var tab by remember { mutableStateOf(Tab.Magic) }
         Scaffold(
             bottomBar = {
@@ -73,6 +79,7 @@ private fun App(vm: RemoteViewModel = viewModel()) {
                     Tab.Log -> LogScreen(vm)
                 }
             }
+        }
         }
     }
 }

@@ -63,6 +63,13 @@ Notes:
 - `TRANSMIT_IR` is a normal install-time permission; the app also checks
   `hasIrEmitter()` and shows a notice on devices without an IR blaster.
 - Dependencies are AndroidX/Kotlin only — no third-party SDKs.
+- This is a pure-Compose app: `scripts/check-theme.sh` is a regression guard
+  (no SDK needed) that fails if a view-based Material Components theme
+  reference (`Theme.Material3.DayNight…`, `Theme.MaterialComponents…`,
+  `com.google.android.material`) sneaks back into the XML or Gradle files.
+  Run it before committing changes to themes or dependencies:
+  `./scripts/check-theme.sh`
+  (`androidx.compose.material3` Compose imports are legitimate and ignored.)
 
 ## Project layout
 
