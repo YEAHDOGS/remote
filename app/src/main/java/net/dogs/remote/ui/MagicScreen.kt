@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.dp
 fun MagicScreen(vm: RemoteViewModel) {
     var showNameDialog by remember { mutableStateOf(false) }
     var nickname by remember { mutableStateOf("") }
+    // Variant that was being probed when IT WORKED was tapped. Captured at
+    // tap time: the sweep keeps advancing while the name dialog is open, so
+    // the state at Save time can point at a later (wrong) variant.
+    var workedVariantId by remember { mutableStateOf<String?>(null) }
     val state = vm.magicState
 
     Column(
@@ -66,7 +70,11 @@ fun MagicScreen(vm: RemoteViewModel) {
                 Text(label, style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(24.dp))
                 Button(
-                    onClick = { showNameDialog = true },
+                    onClick = {
+                        workedVariantId =
+                            (vm.magicState as? MagicState.Running)?.currentVariantId
+                        showNameDialog = true
+                    },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                 ) { Text("IT WORKED", style = MaterialTheme.typography.titleLarge) }
                 Spacer(Modifier.height(12.dp))
@@ -93,10 +101,12 @@ fun MagicScreen(vm: RemoteViewModel) {
         }
 
         if (showNameDialog) {
-            val running = state as? MagicState.Running
-            val label = running?.let { vm.db.variantsById[it.currentVariantId]?.label } ?: ""
+            val label = workedVariantId?.let { vm.db.variantsById[it]?.label } ?: ""
             AlertDialog(
-                onDismissRequest = { showNameDialog = false },
+                onDismissRequest = {
+                    workedVariantId = null
+                    showNameDialog = false
+                },
                 title = { Text("It worked!") },
                 text = {
                     Column {
@@ -113,13 +123,17 @@ fun MagicScreen(vm: RemoteViewModel) {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        vm.magicWorked(nickname.trim())
+                        workedVariantId?.let { vm.magicWorked(nickname.trim(), it) }
                         nickname = ""
+                        workedVariantId = null
                         showNameDialog = false
                     }) { Text("Save") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showNameDialog = false }) { Text("Cancel") }
+                    TextButton(onClick = {
+                        workedVariantId = null
+                        showNameDialog = false
+                    }) { Text("Cancel") }
                 },
             )
         }

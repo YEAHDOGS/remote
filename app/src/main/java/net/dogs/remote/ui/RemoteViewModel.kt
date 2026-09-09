@@ -97,16 +97,23 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         magicState = MagicState.Idle
     }
 
-    /** User tapped IT WORKED: save the currently-probed variant as a profile. */
-    fun magicWorked(nickname: String) {
-        val running = magicState as? MagicState.Running ?: return
+    /**
+     * User tapped IT WORKED: save the variant that was being probed when
+     * they tapped it as a profile.
+     *
+     * [variantId] is captured by the UI at IT WORKED tap time — NOT read
+     * from [magicState] here — because the sweep keeps advancing while the
+     * name dialog is open. Reading the state at Save time could save a
+     * later, wrong variant (or silently no-op once the sweep finished).
+     */
+    fun magicWorked(nickname: String, variantId: String) {
         magicJob?.cancel()
-        attemptLog.markWorked(running.currentVariantId, "vol_up")
+        attemptLog.markWorked(variantId, "vol_up")
         attempts = attemptLog.list()
-        val variant = db.variantsById[running.currentVariantId] ?: return
-        addProfile(nickname.ifBlank { variant.label }, running.currentVariantId)
-        manualVariantId = running.currentVariantId
-        magicState = MagicState.Saved(running.currentVariantId)
+        val variant = db.variantsById[variantId] ?: return
+        addProfile(nickname.ifBlank { variant.label }, variantId)
+        manualVariantId = variantId
+        magicState = MagicState.Saved(variantId)
     }
 
     // ---------------- manual mode ----------------
