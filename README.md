@@ -14,6 +14,11 @@ OnePlus 12R) into a universal TV remote.
   cancellable) — the manual answer to "try this button everywhere".
 - **Profiles** — saved TVs with venue nicknames; rename, set default, delete,
   and jump straight into Manual Mode with "Use".
+- **Macros** — named button sequences for one TV variant ("movie night" =
+  power + input + volume), with per-step pauses. Steps are capped at 12,
+  pauses clamped to 100ms–5s, playback is a single cancellable job, and
+  stale button ids are skipped — so a macro can never run away or hang the
+  emitter. Regression-tested by `tools/test_macros.py`.
 - **Attempt Log** — every probe, transmit, and blast is recorded with variant,
   button, timestamp, and whether it worked. This is the attempt-analysis log.
 - **Carrier diagnostics** — the app reads the phone's reported IR carrier
@@ -79,15 +84,17 @@ Notes:
 
 ```
 app/src/main/java/net/dogs/remote/
-  MainActivity.kt          bottom-nav host (Magic / Manual / Profiles / Log)
+  MainActivity.kt          bottom-nav host (Magic / Manual / Macros / Profiles / Log)
   ir/IrDatabase.kt         audited JSON loader + validation
   ir/IrSender.kt           ConsumerIrManager wrapper
-  ui/RemoteViewModel.kt    single source of truth; cancellable magic/blast jobs
+  ui/RemoteViewModel.kt    single source of truth; cancellable magic/blast/macro jobs
   ui/MagicScreen.kt        one-tap variant sweep + IT WORKED flow
   ui/ManualScreen.kt       brand/variant picker + remote pad + blast mode
+  ui/MacrosScreen.kt       macro list + editor (steps capped, delays clamped)
   ui/ProfilesScreen.kt     saved TVs: rename / default / delete / use
   ui/LogScreen.kt          attempt-analysis log
   data/ProfileStore.kt     SharedPreferences profile CRUD
+  data/MacroStore.kt       SharedPreferences macro CRUD (sanitized, bounded)
   data/AttemptLog.kt       capped SharedPreferences attempt log
 tools/
   gen_ir_db.py             auditable DB generator (4/4 self-verification)

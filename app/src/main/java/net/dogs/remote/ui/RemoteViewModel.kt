@@ -14,6 +14,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.dogs.remote.data.Attempt
 import net.dogs.remote.data.AttemptLog
+import net.dogs.remote.data.IrMacro
+import net.dogs.remote.data.MacroStep
+import net.dogs.remote.data.MacroStore
 import net.dogs.remote.data.ProfileStore
 import net.dogs.remote.data.TvProfile
 import net.dogs.remote.ir.IrDatabase
@@ -34,6 +37,12 @@ sealed interface MagicState {
 sealed interface BlastState {
     data object Idle : BlastState
     data class Running(val done: Int, val total: Int, val buttonId: String) : BlastState
+}
+
+/** Macro playback state machine. */
+sealed interface MacroState {
+    data object Idle : MacroState
+    data class Running(val macroId: String, val name: String, val done: Int, val total: Int) : MacroState
 }
 
 /**
@@ -58,6 +67,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     private val profileStore = ProfileStore(app)
     private val attemptLog = AttemptLog(app)
+    private val macroStore = MacroStore(app)
 
     var profiles by mutableStateOf(profileStore.list())
         private set
@@ -307,6 +317,103 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     fun clearLog() {
         attemptLog.clear()
         attempts = attemptLog.list()
+    }
+
+    // ---------------- macros ----------------
+
+    var macros by mutableStateOf(macroStore.list())
+        private set
+    var macroState by mutableStateOf<MacroState>(MacroState.Idle)
+        private set
+
+    /**
+     * Save a new macro for a TV variant. Returns false when the macro is
+     * invalid or the macro limit is reached — the UI surfaces that instead
+     * of silently dropping the user's work.
+     */
+    fun addMacro(name: String, variantId: String, steps: List<MacroStep>): Boolean {
+        if (db.variantsById[variantId] == null) return false
+        val ok = macroStore.save(
+            IrMacro(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                variantId = variantId,
+                steps = steps,
+            ),
+        )
+        if (ok) macros = macroStore.list()
+        return ok
+    }
+
+    fun updateMacro(id: String, name: String, variantId: String, steps: List<MacroStep>): Boolean {
+        if (db.variantsById[variantId] == null) return false
+        val ok = macroStore.save(IrMacro(id = id, name = name, variantId = variantId, steps = steps))
+        if (ok) macros = macroStore.list()
+        return ok
+    }
+
+    fun deleteMacro(id: String) {
+        if (macroState is MacroState.Running && (macroState as MacroState.Running).macroId == id) {
+            stopMacro()
+        }
+        macroStore.delete(id)
+        macros = macroStore.list()
+    }
+
+    private var macroJob: Job? = null
+
+    /**
+     * Play a macro: fire each step's button on the macro's variant, pausing
+     * [MacroStep.delayAfterMs] between steps. Cancellable — leaving the
+     * screen or pressing Stop kills the job so the emitter never runs away.
+     *
+     * Defensive at playback, not just at creation: steps whose button id no
+     * longer exists in the database are skipped (stale data — the DB is
+     * regenerated from audited sources and button sets can change), and the
+     * delay is re-clamped in case stored data predates the bounds. Every
+     * fired step funnels through [transmitAndReport] and is logged like any
+     * other transmit, so failures still surface and the log stays truthful.
+     */
+    fun runMacro(macroId: String) {
+        if (macroJob?.isActive == true) return
+        val macro = macroStore.list().find { it.id == macroId } ?: return
+        val variant = db.variantsById[macro.variantId] ?: return
+        macroJob = viewModelScope.launch {
+            val total = macro.steps.size
+            var done = 0
+            macroState = MacroState.Running(macroId, macro.name, done, total)
+            for (step in macro.steps) {
+                ensureActive()
+                val btn = variant.buttons[step.buttonId]
+                if (btn != null) {
+                    transmitAndReport(btn.freqHz, btn.pattern)
+                    attemptLog.log(
+                        Attempt(
+                            System.currentTimeMillis(),
+                            variant.id,
+                            variant.label,
+                            step.buttonId,
+                            worked = false,
+                        ),
+                    )
+                    attempts = attemptLog.list()
+                }
+                done++
+                macroState = MacroState.Running(macroId, macro.name, done, total)
+                delay(
+                    step.delayAfterMs.coerceIn(
+                        MacroStore.STEP_DELAY_MIN_MS,
+                        MacroStore.STEP_DELAY_MAX_MS,
+                    ),
+                )
+            }
+            macroState = MacroState.Idle
+        }
+    }
+
+    fun stopMacro() {
+        macroJob?.cancel()
+        macroState = MacroState.Idle
     }
 
     private companion object {

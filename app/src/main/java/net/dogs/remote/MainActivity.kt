@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.dogs.remote.ui.LogScreen
+import net.dogs.remote.ui.MacrosScreen
 import net.dogs.remote.ui.MagicScreen
 import net.dogs.remote.ui.ManualScreen
 import net.dogs.remote.ui.ProfilesScreen
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
 private enum class Tab(val title: String) {
     Magic("Magic"),
     Manual("Manual"),
+    Macros("Macros"),
     Profiles("Profiles"),
     Log("Log"),
 }
@@ -75,6 +77,7 @@ private fun AppTabs(vm: RemoteViewModel) {
                 when (tab) {
                     Tab.Magic -> MagicScreen(vm)
                     Tab.Manual -> ManualScreen(vm)
+                    Tab.Macros -> MacrosScreen(vm)
                     Tab.Profiles -> ProfilesScreen(vm, onUse = { tab = Tab.Manual })
                     Tab.Log -> LogScreen(vm)
                 }
