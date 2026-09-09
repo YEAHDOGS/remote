@@ -16,6 +16,10 @@ OnePlus 12R) into a universal TV remote.
   and jump straight into Manual Mode with "Use".
 - **Attempt Log** — every probe, transmit, and blast is recorded with variant,
   button, timestamp, and whether it worked. This is the attempt-analysis log.
+- **Carrier diagnostics** — the app reads the phone's reported IR carrier
+  ranges and warns when a variant's carrier (e.g. Philips 36kHz, Sony 40kHz)
+  falls outside them, instead of failing silently. Unknown caps are fail-open
+  (no warnings). Regression-tested by `tools/test_carrier.py`.
 
 ## IR database (audited, nothing invented)
 
