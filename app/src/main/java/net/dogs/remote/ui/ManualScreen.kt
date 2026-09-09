@@ -1,5 +1,6 @@
 package net.dogs.remote.ui
 
+import android.view.MotionEvent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.gestures.detectPressGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -27,7 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.unit.dp
 import net.dogs.remote.ir.IrBrand
 import net.dogs.remote.ir.IrVariant
@@ -123,17 +123,22 @@ fun ManualScreen(vm: RemoteViewModel) {
                             .height(56.dp)
                             .then(
                                 if (repeatable) {
-                                    Modifier.pointerInput(variant.id, id, vm.blastMode) {
-                                        detectPressGestures(
-                                            onPress = {
+                                    // Hold-to-repeat via pointer interop: ACTION_DOWN starts the
+                                    // repeat job, ACTION_UP/CANCEL stops it. Consuming DOWN keeps
+                                    // the Button's onClick (a no-op for repeatables) from firing.
+                                    Modifier.pointerInteropFilter { event ->
+                                        when (event.action) {
+                                            MotionEvent.ACTION_DOWN -> {
                                                 vm.startRepeat(variant.id, id)
-                                                try {
-                                                    tryAwaitRelease()
-                                                } finally {
-                                                    vm.stopRepeat()
-                                                }
-                                            },
-                                        )
+                                                true
+                                            }
+                                            MotionEvent.ACTION_UP,
+                                            MotionEvent.ACTION_CANCEL -> {
+                                                vm.stopRepeat()
+                                                true
+                                            }
+                                            else -> false
+                                        }
                                     }
                                 } else {
                                     Modifier
