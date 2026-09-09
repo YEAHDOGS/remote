@@ -2,6 +2,7 @@ package net.dogs.remote.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -24,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * Magic Mode: one tap rapidly tries volume-up across every variant,
- * Samsung first. The user taps IT WORKED the moment the TV responds,
+ * Magic Mode: one tap rapidly tries the selected probe signal across every
+ * variant, Samsung first. The user taps IT WORKED the moment the TV responds,
  * names the venue, and the variant is saved as a profile.
  */
 @Composable
@@ -36,6 +38,9 @@ fun MagicScreen(vm: RemoteViewModel) {
     // tap time: the sweep keeps advancing while the name dialog is open, so
     // the state at Save time can point at a later (wrong) variant.
     var workedVariantId by remember { mutableStateOf<String?>(null) }
+    // Probe signal in use at tap time — same capture discipline, so the
+    // attempt log marks the signal that was actually transmitted.
+    var workedProbeButtonId by remember { mutableStateOf<String?>(null) }
     val state = vm.magicState
 
     Column(
@@ -46,8 +51,8 @@ fun MagicScreen(vm: RemoteViewModel) {
         Text("Magic Mode", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "One tap tries volume-up across TV variants, Samsung first. " +
-                "When the TV responds, tap IT WORKED.",
+            "One tap tries the selected probe signal across TV variants, " +
+                "Samsung first. When the TV responds, tap IT WORKED.",
             style = MaterialTheme.typography.bodyMedium,
         )
         val unsupported = vm.unsupportedVariantIds
@@ -63,6 +68,26 @@ fun MagicScreen(vm: RemoteViewModel) {
             )
         }
         Spacer(Modifier.height(32.dp))
+
+        Text(
+            "Probe signal",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            for (id in MAGIC_PROBE_OPTIONS) {
+                FilterChip(
+                    selected = vm.magicProbeButtonId == id,
+                    onClick = { vm.setMagicProbeButtonId(id) },
+                    label = { Text(buttonLabel(id)) },
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
 
         when (state) {
             is MagicState.Idle -> {
@@ -85,6 +110,7 @@ fun MagicScreen(vm: RemoteViewModel) {
                     onClick = {
                         workedVariantId =
                             (vm.magicState as? MagicState.Running)?.currentVariantId
+                        workedProbeButtonId = vm.magicProbeButtonId
                         showNameDialog = true
                     },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
@@ -114,15 +140,17 @@ fun MagicScreen(vm: RemoteViewModel) {
 
         if (showNameDialog) {
             val label = workedVariantId?.let { vm.db.variantsById[it]?.label } ?: ""
+            val probeLabel = workedProbeButtonId?.let { buttonLabel(it) } ?: ""
             AlertDialog(
                 onDismissRequest = {
                     workedVariantId = null
+                    workedProbeButtonId = null
                     showNameDialog = false
                 },
                 title = { Text("It worked!") },
                 text = {
                     Column {
-                        Text("Saving variant \"$label\". Name this TV / venue:")
+                        Text("Saving variant \"$label\" (probed with $probeLabel). Name this TV / venue:")
                         Spacer(Modifier.height(8.dp))
                         TextField(
                             value = nickname,
@@ -135,15 +163,23 @@ fun MagicScreen(vm: RemoteViewModel) {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        workedVariantId?.let { vm.magicWorked(nickname.trim(), it) }
+                        workedVariantId?.let {
+                            vm.magicWorked(
+                                nickname.trim(),
+                                it,
+                                workedProbeButtonId ?: MAGIC_PROBE_DEFAULT,
+                            )
+                        }
                         nickname = ""
                         workedVariantId = null
+                        workedProbeButtonId = null
                         showNameDialog = false
                     }) { Text("Save") }
                 },
                 dismissButton = {
                     TextButton(onClick = {
                         workedVariantId = null
+                        workedProbeButtonId = null
                         showNameDialog = false
                     }) { Text("Cancel") }
                 },

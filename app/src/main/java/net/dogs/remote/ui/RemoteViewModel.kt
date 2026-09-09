@@ -37,6 +37,15 @@ sealed interface BlastState {
 }
 
 /**
+ * Button ids eligible as the Magic Mode probe signal. Every option exists on
+ * every magic variant in ir_database.json, so switching the probe never
+ * silently skips variants. vol_up stays the default, so historical behavior
+ * is unchanged unless the user picks otherwise.
+ */
+val MAGIC_PROBE_OPTIONS = listOf("mute", "vol_up", "vol_down", "power")
+const val MAGIC_PROBE_DEFAULT = "vol_up"
+
+/**
  * Single source of truth for all four screens.
  *
  * All IR transmits run on Dispatchers.IO; all state updates happen on the
@@ -59,6 +68,18 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     var blastState by mutableStateOf<BlastState>(BlastState.Idle)
         private set
     var blastMode by mutableStateOf(false)
+
+    /**
+     * Which button the Magic sweep probes with. Write through
+     * [setMagicProbeButtonId], which rejects anything outside
+     * [MAGIC_PROBE_OPTIONS], so the probe can never become an unknown id.
+     */
+    var magicProbeButtonId: String by mutableStateOf(MAGIC_PROBE_DEFAULT)
+        private set
+
+    fun setMagicProbeButtonId(buttonId: String) {
+        if (buttonId in MAGIC_PROBE_OPTIONS) magicProbeButtonId = buttonId
+    }
 
     /** Carrier ranges this device's emitter reports (empty = unknown, fail-open). */
     val carrierRanges: List<IntRange> = sender.carrierRanges()
@@ -90,19 +111,22 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- magic mode ----------------
 
-    /** Tries vol_up across every variant in magic order (Samsung first). */
+    /** Tries the selected probe signal across every variant in magic order (Samsung first). */
     fun startMagic() {
         if (magicJob?.isActive == true) return
+        // Captured here: changing the selector mid-sweep must not rewire a
+        // sweep already in flight.
+        val probeButtonId = magicProbeButtonId
         val variants = db.magicVariants
         magicJob = viewModelScope.launch {
             for ((i, v) in variants.withIndex()) {
                 ensureActive()
                 magicState = MagicState.Running(i, variants.size, v.id)
-                val btn = v.buttons["vol_up"]
+                val btn = v.buttons[probeButtonId]
                 if (btn != null) {
                     withContext(Dispatchers.IO) { sender.transmit(btn.freqHz, btn.pattern) }
                     attemptLog.log(
-                        Attempt(System.currentTimeMillis(), v.id, v.label, "vol_up", worked = false),
+                        Attempt(System.currentTimeMillis(), v.id, v.label, probeButtonId, worked = false),
                     )
                     attempts = attemptLog.list()
                 }
@@ -125,10 +149,15 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
      * from [magicState] here — because the sweep keeps advancing while the
      * name dialog is open. Reading the state at Save time could save a
      * later, wrong variant (or silently no-op once the sweep finished).
+     * [probeButtonId] is captured at tap time the same way, so the attempt
+     * log marks the signal that was actually transmitted. Unknown values
+     * fall back to [MAGIC_PROBE_DEFAULT]; the selector never sends one, but
+     * the log must stay truthful regardless of the caller.
      */
-    fun magicWorked(nickname: String, variantId: String) {
+    fun magicWorked(nickname: String, variantId: String, probeButtonId: String) {
         magicJob?.cancel()
-        attemptLog.markWorked(variantId, "vol_up")
+        val probe = if (probeButtonId in MAGIC_PROBE_OPTIONS) probeButtonId else MAGIC_PROBE_DEFAULT
+        attemptLog.markWorked(variantId, probe)
         attempts = attemptLog.list()
         val variant = db.variantsById[variantId] ?: return
         addProfile(nickname.ifBlank { variant.label }, variantId)
