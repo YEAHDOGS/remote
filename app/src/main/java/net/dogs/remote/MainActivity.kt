@@ -80,7 +80,6 @@ private fun AppTabs(vm: RemoteViewModel) {
                 }
             }
         }
-    }
 }
 
 @Composable
