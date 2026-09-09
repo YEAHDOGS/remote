@@ -1,6 +1,7 @@
 package net.dogs.remote.ui
 
 import android.app.Application
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -55,6 +56,10 @@ sealed interface MacroState {
 val MAGIC_PROBE_OPTIONS = listOf("mute", "vol_up", "vol_down", "power")
 const val MAGIC_PROBE_DEFAULT = "vol_up"
 
+/** Prefs file + key for the Magic learned-order reset timestamp. */
+private const val MAGIC_PREFS = "dogs_remote_magic"
+private const val MAGIC_ORDER_RESET_KEY = "magic_order_reset_ts"
+
 /**
  * Single source of truth for all four screens.
  *
@@ -69,6 +74,28 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     private val profileStore = ProfileStore(app)
     private val attemptLog = AttemptLog(app)
     private val macroStore = MacroStore(app)
+    private val magicPrefs = app.getSharedPreferences(MAGIC_PREFS, Context.MODE_PRIVATE)
+
+    /**
+     * Timestamp of the last "reset learned order" tap, or 0 when never
+     * reset. [magicSweepOrder] ignores WORKED attempts older than this,
+     * so an accidental IT WORKED tap stops steering the sweep order
+     * without the attempt log itself being rewritten (the log stays
+     * intact as the audit trail; it just no longer teaches).
+     */
+    var magicOrderResetTs by mutableStateOf(magicPrefs.getLong(MAGIC_ORDER_RESET_KEY, 0L))
+        private set
+
+    /** True when some WORKED attempt currently influences the sweep order. */
+    val hasLearnedOrder: Boolean
+        get() = attempts.any { it.worked && it.ts >= magicOrderResetTs }
+
+    /** Forget the learned sweep order: future sweeps start from the shipped order. */
+    fun resetLearnedOrder() {
+        val now = System.currentTimeMillis()
+        magicPrefs.edit().putLong(MAGIC_ORDER_RESET_KEY, now).apply()
+        magicOrderResetTs = now
+    }
 
     var profiles by mutableStateOf(profileStore.list())
         private set
@@ -168,7 +195,7 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
         val probeButtonId = magicProbeButtonId
         // Captured here for the same reason — new attempts logged by an
         // earlier run must not reorder a sweep already in flight.
-        val variants = magicSweepOrder(db.magicVariants, attempts)
+        val variants = magicSweepOrder(db.magicVariants, attempts, magicOrderResetTs)
         magicJob = viewModelScope.launch {
             for ((i, v) in variants.withIndex()) {
                 ensureActive()

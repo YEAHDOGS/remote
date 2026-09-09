@@ -10,7 +10,10 @@ OnePlus 12R) into a universal TV remote.
   venue a nickname, and the brand/variant is saved as a profile. The sweep
   order is learned: variants with prior WORKED attempts are tried first
   (most recent first), so repeat venues resolve in seconds; variants that
-  have never worked keep the shipped order behind them. Blast Mode stays on
+  have never worked keep the shipped order behind them. You can reset the
+  learned order from the Magic screen (e.g. after an accidental IT WORKED
+  tap) — the attempt log itself is left intact, it just stops teaching.
+  Blast Mode stays on
   the shipped order — the exhaustive manual sweep, not the smart one.
   Ordering logic is the pure function `ir/MagicOrder.kt::magicSweepOrder`,
   regression-tested by `tools/test_magic_order.py`.

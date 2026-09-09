@@ -27,8 +27,9 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Magic Mode: one tap rapidly tries the selected probe signal across every
- * variant, Samsung first. The user taps IT WORKED the moment the TV responds,
- * names the venue, and the variant is saved as a profile.
+ * variant, previously-worked variants first (the learned sweep order). The
+ * user taps IT WORKED the moment the TV responds, names the venue, and the
+ * variant is saved as a profile.
  */
 @Composable
 fun MagicScreen(vm: RemoteViewModel) {
@@ -52,7 +53,7 @@ fun MagicScreen(vm: RemoteViewModel) {
         Spacer(Modifier.height(8.dp))
         Text(
             "One tap tries the selected probe signal across TV variants, " +
-                "Samsung first. When the TV responds, tap IT WORKED.",
+                "previously-worked variants first. When the TV responds, tap IT WORKED.",
             style = MaterialTheme.typography.bodyMedium,
         )
         val unsupported = vm.unsupportedVariantIds
@@ -95,6 +96,15 @@ fun MagicScreen(vm: RemoteViewModel) {
                     onClick = { vm.startMagic() },
                     modifier = Modifier.fillMaxWidth().height(64.dp),
                 ) { Text("START MAGIC", style = MaterialTheme.typography.titleLarge) }
+                // Reset the learned sweep order: an accidental IT WORKED tap
+                // steers every future sweep, and the audit log must stay
+                // intact — this clears only the order's memory of it.
+                if (vm.hasLearnedOrder) {
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(onClick = { vm.resetLearnedOrder() }) {
+                        Text("Reset learned order")
+                    }
+                }
             }
             is MagicState.Running -> {
                 val label = vm.db.variantsById[state.currentVariantId]?.label
