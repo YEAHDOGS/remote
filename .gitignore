@@ -1,0 +1,18 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+
+# IntelliJ / Android Studio
+.idea/
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
