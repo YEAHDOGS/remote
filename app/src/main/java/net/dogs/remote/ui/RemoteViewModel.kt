@@ -18,6 +18,7 @@ import net.dogs.remote.data.ProfileStore
 import net.dogs.remote.data.TvProfile
 import net.dogs.remote.ir.IrDatabase
 import net.dogs.remote.ir.IrSender
+import net.dogs.remote.ir.isCarrierSupported
 import net.dogs.remote.ir.loadIrDatabase
 import java.util.UUID
 
@@ -58,6 +59,25 @@ class RemoteViewModel(app: Application) : AndroidViewModel(app) {
     var blastState by mutableStateOf<BlastState>(BlastState.Idle)
         private set
     var blastMode by mutableStateOf(false)
+
+    /** Carrier ranges this device's emitter reports (empty = unknown, fail-open). */
+    val carrierRanges: List<IntRange> = sender.carrierRanges()
+
+    /**
+     * Variant ids whose buttons need carrier frequencies outside what this
+     * device reports supporting. Flagged on `any` out-of-range button — if
+     * one button can't go out, the variant can't fully work. Stays empty when
+     * the device reports nothing (unknown caps = no warnings).
+     */
+    val unsupportedVariantIds: Set<String> =
+        db.brands.flatMap { it.variants }
+            .filter { v ->
+                v.buttons.values.any { btn ->
+                    !isCarrierSupported(btn.freqHz, carrierRanges)
+                }
+            }
+            .map { it.id }
+            .toSet()
 
     /** Variant selected in Manual Mode; Profiles "Use" writes here too. */
     var manualVariantId: String? by mutableStateOf(
