@@ -70,6 +70,10 @@ Notes:
   Run it before committing changes to themes or dependencies:
   `./scripts/check-theme.sh`
   (`androidx.compose.material3` Compose imports are legitimate and ignored.)
+  `scripts/check-composables.sh` is its sibling guard: it fails if a bare
+  `return` (not `return@label`) appears inside a `@Composable` body — the
+  compiler rejects those (see f52525d), and this catches it at commit time.
+  Both guards run offline with no SDK.
 
 ## Project layout
 
