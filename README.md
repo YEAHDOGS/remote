@@ -48,6 +48,13 @@ patterns, known-good spot checks. Variants whose timings are inferred rather
 than sourced (currently only TCL / RCA-38) are flagged `verified: false` in the
 JSON and shown with a warning in the app — confirm them on-device via Magic Mode.
 
+The app's read path is hardened too: a missing asset or malformed JSON yields
+an empty database instead of crashing the app at startup, malformed
+brands/variants are skipped without killing the rest, duplicate variant ids
+collapse to the first, and every button is validated (10kHz–100kHz carrier,
+non-empty length-bounded all-positive pattern) before it can reach the
+emitter. Regression-tested by `tools/test_ir_db_parse.py`.
+
 Regenerate:
 
 ```bash
