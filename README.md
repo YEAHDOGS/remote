@@ -13,7 +13,10 @@ OnePlus 12R) into a universal TV remote.
   **blast mode** to fire one button across *all* variants (rate-limited,
   cancellable) — the manual answer to "try this button everywhere".
 - **Profiles** — saved TVs with venue nicknames; rename, set default, delete,
-  and jump straight into Manual Mode with "Use".
+  and jump straight into Manual Mode with "Use". The store's read path is
+  hardened (corrupt JSON → empty list, bad rows skipped, names trimmed/capped,
+  list capped, at most one default) — regression-tested by
+  `tools/test_profile_store.py`.
 - **Macros** — named button sequences for one TV variant ("movie night" =
   power + input + volume), with per-step pauses. Steps are capped at 12,
   pauses clamped to 100ms–5s, playback is a single cancellable job, and
