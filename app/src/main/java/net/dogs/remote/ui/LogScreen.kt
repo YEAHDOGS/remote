@@ -9,9 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
@@ -26,6 +32,9 @@ private val TIME_FMT = SimpleDateFormat("MMM d, HH:mm:ss", Locale.US)
  */
 @Composable
 fun LogScreen(vm: RemoteViewModel) {
+    // Two-step clear: the log is the audit trail AND the learning source for
+    // Magic Mode's sweep order — one mis-tap must never wipe it directly.
+    var showClearConfirm by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -35,7 +44,7 @@ fun LogScreen(vm: RemoteViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("Attempt Log", style = MaterialTheme.typography.headlineMedium)
-            OutlinedButton(onClick = { vm.clearLog() }) { Text("Clear") }
+            OutlinedButton(onClick = { showClearConfirm = true }) { Text("Clear") }
         }
         Text(
             "${vm.attempts.size} attempts recorded. " +
@@ -69,5 +78,28 @@ fun LogScreen(vm: RemoteViewModel) {
                 }
             }
         }
+    }
+
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text("Clear attempt log?") },
+            text = {
+                Text(
+                    "This permanently deletes all ${vm.attempts.size} recorded " +
+                        "attempts, including which variants were marked WORKED " +
+                        "— Magic Mode's learned sweep order starts over too.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.clearLog()
+                    showClearConfirm = false
+                }) { Text("Clear") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }

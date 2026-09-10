@@ -81,7 +81,7 @@ python3 tools/run_all_tests.py   # all Python suites + the Compose theme guard
 ```
 
 `run_all_tests.py` auto-discovers every `tools/test_*.py` suite (currently
-10) and then runs `scripts/check-theme.sh`, so one command is the whole
+11) and then runs `scripts/check-theme.sh`, so one command is the whole
 offline gate. Run it before committing.
 
 ## Build
