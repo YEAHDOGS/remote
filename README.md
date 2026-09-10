@@ -72,6 +72,18 @@ python3 tools/gen_ir_db.py      # verify + render -> app/src/main/assets/ir_data
 python3 tools/test_db.py        # regression tests for the database
 ```
 
+## Regression tests
+
+Everything that can run without an Android SDK lives in `tools/`:
+
+```bash
+python3 tools/run_all_tests.py   # all Python suites + the Compose theme guard
+```
+
+`run_all_tests.py` auto-discovers every `tools/test_*.py` suite (currently
+10) and then runs `scripts/check-theme.sh`, so one command is the whole
+offline gate. Run it before committing.
+
 ## Build
 
 Requirements: Android Studio (Hedgehog or newer) with an Android SDK, or a
