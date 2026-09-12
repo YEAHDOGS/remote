@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>DOGS Remote, the universal TV remote for Android</title>
+<title>DOGS Remote — one tap, any TV</title>
 <meta name="description" content="DOGS Remote turns an Android phone with an IR blaster into a universal TV remote. One-tap Magic Mode, manual pad, profiles, attempt log. Free, offline, no accounts.">
 <meta name="theme-color" content="#141110">
 <link rel="icon" type="image/svg+xml" href="/remote/favicon.svg">
 <link rel="icon" href="/remote/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/remote/apple-touch-icon.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="DOGS Remote, the universal TV remote for Android">
+<meta property="og:title" content="DOGS Remote — one tap, any TV">
 <meta property="og:description" content="One tap. Any TV. A universal TV remote for Android phones with an IR blaster. Free, offline, no accounts.">
 <meta property="og:url" content="https://yeahdogs.github.io/remote/">
 <meta property="og:image" content="https://yeahdogs.github.io/remote/og.png">
@@ -44,7 +44,7 @@
 </script>
 <style>
 :root{
-  --bg:#141110; --bg2:#1c1715; --panel:#211b18; --line:#2e2621;
+  --bg:#141110; --bg2:#1c1715; --line:#2e2621;
   --ink:#f2ede4; --muted:#a89a8b; --faint:#6f6357;
   --red:#e0482c; --red-deep:#a93218; --amber:#d9a441;
   --serif:Georgia,'Times New Roman',serif;
@@ -52,51 +52,66 @@
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.55;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::selection{background:var(--red);color:#fff}
 a{color:inherit}
-.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 /* ---------- top bar ---------- */
-.topbar{position:sticky;top:0;z-index:50;background:rgba(20,17,16,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:60;background:rgba(20,17,16,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar .bar{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:58px;padding:0 20px}
 .wordmark{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.22em;text-decoration:none}
 .wordmark b{color:var(--red)}
-.topbar .cta{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-decoration:none;background:var(--red);color:#fff;padding:10px 18px;border-radius:10px;transition:transform .15s ease,background .15s ease}
-.topbar .cta:hover{background:#f05637;transform:translateY(-1px)}
-/* ---------- hero ---------- */
-.hero{padding:72px 0 24px;position:relative}
-.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--amber);margin-bottom:18px}
-h1{font-family:var(--serif);font-weight:400;font-size:clamp(44px,11vw,92px);line-height:1.02;letter-spacing:-.01em}
-h1 em{font-style:italic;color:var(--red)}
-.lede{margin-top:20px;font-size:17px;color:var(--muted);max-width:34ch}
-.hero-ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--mono);font-size:13px;letter-spacing:.1em;padding:16px 26px;border-radius:12px;border:1px solid var(--line);transition:transform .15s ease,background .15s ease,border-color .15s ease;cursor:pointer}
+.topbar .cta{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-decoration:none;background:var(--red);color:#fff;padding:10px 18px;border-radius:10px}
+.topbar .cta:active{transform:scale(.96)}
+/* ---------- panels ---------- */
+.panel{position:relative;height:100vh;height:100svh;scroll-snap-align:start;overflow:hidden;display:flex}
+.bg{position:absolute;left:0;right:0;top:-10%;height:120%;background-size:cover;background-position:center;will-change:transform}
+.scrim{position:absolute;inset:0;pointer-events:none}
+.word{position:absolute;font-family:var(--serif);font-weight:400;line-height:.9;letter-spacing:-.02em;color:var(--ink);opacity:.16;white-space:nowrap;pointer-events:none;user-select:none;font-size:clamp(88px,24vw,300px)}
+.copy{position:absolute;z-index:2;max-width:34ch;padding:0 24px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--amber);margin-bottom:14px}
+.copy h2{font-family:var(--serif);font-weight:400;font-size:clamp(38px,9vw,72px);line-height:1.02;letter-spacing:-.01em}
+.copy h2 em{font-style:italic;color:var(--red)}
+.sub{margin-top:16px;font-size:16px;color:var(--muted);max-width:30ch;line-height:1.5}
+.nums{display:flex;gap:30px;margin-top:22px}
+.num b{display:block;font-family:var(--serif);font-weight:400;font-size:38px;color:var(--ink)}
+.num span{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--faint)}
+.brands{margin-top:18px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--faint);line-height:2;max-width:32ch}
+.brands i{font-style:normal;color:var(--amber)}
+.btn{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--mono);font-size:13px;letter-spacing:.1em;padding:17px 30px;border-radius:12px;background:var(--red);color:#fff;margin-top:24px;white-space:nowrap}
 .btn:active{transform:scale(.96)}
-.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
-.btn.primary:hover{background:#f05637}
-.btn.ghost{background:transparent;color:var(--ink)}
-.btn.ghost:hover{border-color:var(--faint)}
-.btn .sub{font-size:10px;letter-spacing:.06em;opacity:.75}
-.micro{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:14px;letter-spacing:.04em}
-/* ---------- remote pad demo ---------- */
-.demo{padding:56px 0 8px}
-.demo-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:8px}
-h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,7vw,48px);line-height:1.1}
-.demo-note{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.14em}
-.pad-stage{display:flex;justify-content:center;padding:40px 0 8px;position:relative}
-.remote{width:250px;background:linear-gradient(180deg,#26201c,#1a1512);border:1px solid var(--line);border-radius:34px;padding:26px 22px 30px;position:relative;box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+.btn .sub2{font-size:10px;letter-spacing:.06em;opacity:.75}
+.micro{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.05em;margin-top:16px}
+/* reveal */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0ms)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+/* --- panel 1: REMOTE (text bottom-left, word bottom-right) --- */
+#p1 .scrim{background:linear-gradient(180deg,rgba(20,17,16,.55) 0%,rgba(20,17,16,0) 35%,rgba(20,17,16,.28) 62%,rgba(20,17,16,.92) 100%)}
+#p1 .word{right:-.06em;bottom:-.14em}
+#p1 .copy{left:0;bottom:0;padding-bottom:calc(34px + env(safe-area-inset-bottom))}
+/* --- panel 2: MAGIC (text top-right, word top-left) --- */
+#p2 .scrim{background:linear-gradient(200deg,rgba(20,17,16,.15) 0%,rgba(20,17,16,.75) 55%,rgba(20,17,16,.95) 100%)}
+#p2 .word{left:-.08em;top:.5em}
+#p2 .copy{right:0;top:0;padding-top:110px;text-align:right}
+#p2 .sub{margin-left:auto}
+/* --- panel 3: PAD (no photo; text mid-left, pad right) --- */
+#p3{background:radial-gradient(120% 90% at 80% 20%,#241a15 0%,var(--bg) 60%);align-items:center}
+#p3 .word{left:-.06em;top:.4em}
+#p3 .inner{position:relative;z-index:2;width:100%;max-width:1200px;margin:0 auto;padding:110px 24px 40px;display:grid;gap:36px;align-items:center}
+#p3 .padwrap{display:flex;justify-content:center}
+.padnote{font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--faint);margin-top:14px}
+/* remote widget */
+.remote{width:min(250px,72vw);background:linear-gradient(180deg,#26201c,#1a1512);border:1px solid var(--line);border-radius:34px;padding:26px 22px 30px;position:relative;box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
 .ir-led{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#3a2c26;transition:background .12s,box-shadow .12s}
 .ir-led.on{background:var(--red);box-shadow:0 0 14px 3px rgba(224,72,44,.8)}
-.ir-ring{position:absolute;top:-6px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;border:2px solid var(--red);opacity:0;pointer-events:none}
+.ir-ring{position:absolute;top:4px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;border:2px solid var(--red);opacity:0;pointer-events:none}
 .ir-ring.fire{animation:ring .7s ease-out}
 @keyframes ring{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(9)}}
-@media (prefers-reduced-motion:reduce){.ir-ring.fire{animation:none}}
-.rbtn{border:1px solid var(--line);background:#2a231e;color:var(--ink);border-radius:50%;font-family:var(--mono);font-size:11px;letter-spacing:.08em;cursor:pointer;transition:transform .08s ease,background .08s ease;user-select:none;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center}
+.rbtn{border:1px solid var(--line);background:#2a231e;color:var(--ink);border-radius:50%;font-family:var(--mono);font-size:11px;letter-spacing:.08em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;transition:transform .08s ease,background .08s ease}
 .rbtn:active,.rbtn.pressed{transform:scale(.9);background:#38302a}
 .rbtn.power{width:56px;height:56px;margin:0 auto 18px;background:var(--red-deep);border-color:#7d2812;color:#fff;font-size:14px}
-.rbtn.power:active,.rbtn.power.pressed{background:var(--red)}
 .dpad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);gap:6px;justify-content:center;margin:0 auto 18px}
 .dpad .rbtn{width:64px;height:64px;border-radius:18px;font-size:16px}
 .dpad .ok{border-radius:50%;background:#33291f;font-weight:700}
@@ -104,209 +119,236 @@ h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,7vw,48px);line-
 .vch .col{display:flex;flex-direction:column;gap:8px;align-items:center}
 .vch .col span{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.2em}
 .vch .rbtn{width:52px;height:52px;border-radius:16px;font-size:18px}
-.magicrow{display:flex;justify-content:center}
-.magicbtn{font-family:var(--mono);font-size:12px;letter-spacing:.2em;background:transparent;border:1px dashed var(--faint);color:var(--amber);border-radius:12px;padding:14px 22px;cursor:pointer;transition:transform .08s ease,border-color .15s;width:100%}
+.magicbtn{font-family:var(--mono);font-size:12px;letter-spacing:.2em;background:transparent;border:1px dashed var(--faint);color:var(--amber);border-radius:12px;padding:14px 22px;cursor:pointer;width:100%}
 .magicbtn:active{transform:scale(.97)}
-.statusline{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;min-height:44px;margin-top:18px;letter-spacing:.04em}
+.statusline{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;min-height:40px;margin-top:16px;letter-spacing:.04em}
 .statusline .hit{color:var(--red)}
-/* ---------- sections ---------- */
-section.block{padding:64px 0}
-.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.28em;color:var(--red);margin-bottom:16px}
-.modes{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:28px}
-.mode{background:var(--bg2);padding:30px 26px}
-.mode h3{font-family:var(--serif);font-size:24px;font-weight:400;margin-bottom:10px}
-.mode h3 .n{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.2em;display:block;margin-bottom:8px}
-.mode p{color:var(--muted);font-size:15px;max-width:46ch}
-.mode p strong{color:var(--ink);font-weight:600}
-.db{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:34px 28px;margin-top:28px}
-.db .nums{display:flex;gap:36px;flex-wrap:wrap;margin:22px 0}
-.db .num{font-family:var(--serif)}
-.db .num b{display:block;font-size:44px;font-weight:400;color:var(--ink)}
-.db .num span{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--faint)}
-.db p{color:var(--muted);font-size:15px;max-width:60ch}
-.brands{font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.1em;margin-top:18px;line-height:2.1}
-.brands i{font-style:normal;color:var(--amber)}
-.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:28px}
-.fact{background:var(--bg2);padding:26px 22px}
-.fact b{font-family:var(--serif);font-weight:400;font-size:20px;display:block;margin-bottom:6px}
-.fact span{font-size:14px;color:var(--muted)}
-/* ---------- download ---------- */
-.dl{background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:44px 30px;text-align:center;margin-top:28px}
-.dl h3{font-family:var(--serif);font-weight:400;font-size:32px;margin-bottom:10px}
-.dl p{color:var(--muted);font-size:15px;max-width:44ch;margin:0 auto 26px}
-.dl .btn{font-size:14px;padding:18px 34px}
+/* --- panel 4: CODES (text mid-right, word bottom-left) --- */
+#p4 .scrim{background:linear-gradient(160deg,rgba(20,17,16,.85) 0%,rgba(20,17,16,.25) 45%,rgba(20,17,16,.9) 100%)}
+#p4 .word{left:-.08em;bottom:-.14em}
+#p4 .copy{right:0;top:50%;transform:translateY(-50%);text-align:right}
+#p4 .rv{transform:translateY(26px)}
+#p4 .rv.in{transform:none}
+#p4 .nums,#p4 .brands{justify-content:flex-end;margin-left:auto}
+#p4 .sub{margin-left:auto}
+/* --- panel 5: NOTHING (text mid-left, word right-mid) --- */
+#p5 .scrim{background:linear-gradient(100deg,rgba(20,17,16,.95) 0%,rgba(20,17,16,.45) 50%,rgba(20,17,16,.1) 100%)}
+#p5 .word{right:-.1em;top:38%}
+#p5 .copy{left:0;top:50%;transform:translateY(-50%)}
+#p5 .rv{transform:translateY(26px)}
+#p5 .rv.in{transform:none}
+/* --- panel 6: GET (text center, word bottom-center) --- */
+#p6{background:radial-gradient(110% 80% at 50% 110%,#3a140c 0%,var(--bg) 62%);align-items:center;justify-content:center;text-align:center}
+#p6 .word{left:50%;transform:translateX(-50%);bottom:-.16em}
+#p6 .copy{position:relative;left:auto;top:auto;transform:none;max-width:40ch;padding:0 24px;margin:0 auto}
+#p6 .rv{transform:translateY(26px)}
+#p6 .rv.in{transform:none}
+#p6 .btn{margin-left:auto;margin-right:auto}
 .dl-links{margin-top:22px;font-family:var(--mono);font-size:12px;color:var(--faint);letter-spacing:.06em}
 .dl-links a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-/* ---------- faq ---------- */
-.faq{margin-top:28px;border-top:1px solid var(--line)}
-.faq details{border-bottom:1px solid var(--line);padding:20px 4px}
-.faq summary{font-family:var(--serif);font-size:19px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px}
+/* --- panel 7: FAQ + footer --- */
+#p7{background:var(--bg2);align-items:flex-start}
+#p7 .inner{position:relative;z-index:2;width:100%;max-width:760px;margin:0 auto;padding:100px 24px calc(28px + env(safe-area-inset-bottom));display:flex;flex-direction:column;height:100%}
+.faq{margin-top:20px;border-top:1px solid var(--line);overflow-y:auto}
+.faq details{border-bottom:1px solid var(--line);padding:14px 4px}
+.faq summary{font-family:var(--serif);font-size:17px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";font-family:var(--mono);color:var(--red);font-size:22px;flex-shrink:0;transition:transform .2s ease}
+.faq summary::after{content:"+";font-family:var(--mono);color:var(--red);font-size:20px;flex-shrink:0;transition:transform .2s ease}
 .faq details[open] summary::after{transform:rotate(45deg)}
-.faq details p{color:var(--muted);font-size:15px;margin-top:12px;max-width:62ch}
-/* ---------- footer ---------- */
-footer{border-top:1px solid var(--line);margin-top:40px;padding:36px 0 120px}
-footer .wrap{display:flex;flex-direction:column;gap:14px}
+.faq details p{color:var(--muted);font-size:14px;margin-top:10px;max-width:60ch;line-height:1.55}
+footer{margin-top:auto;padding-top:22px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
 .fnav{display:flex;gap:22px;font-family:var(--mono);font-size:12px;letter-spacing:.1em}
 .fnav a{color:var(--muted);text-decoration:none}
-.fnav a:hover{color:var(--ink)}
-.attr{font-size:13px;color:var(--faint)}
-.attr a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
-/* ---------- sticky mobile cta ---------- */
-.sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(20,17,16,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:none}
-.sticky-cta a{display:block;text-align:center;text-decoration:none;background:var(--red);color:#fff;font-family:var(--mono);font-size:13px;letter-spacing:.12em;padding:15px;border-radius:12px}
-@media (max-width:640px){.sticky-cta{display:block}}
-/* ---------- reveal ---------- */
-.rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
-.rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+.badge{display:block;max-width:190px}
+.badge img{display:block;width:100%;height:auto}
 @media (min-width:760px){
-  .modes{grid-template-columns:1fr 1fr}
-  .facts{grid-template-columns:repeat(4,1fr)}
-  .hero{padding:110px 0 40px}
-  .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-  .demo-head{display:block}
+  #p3 .inner{grid-template-columns:1fr 1fr;gap:20px}
+  .copy{padding:0 48px}
+}
+@media (prefers-reduced-motion:reduce){.ir-ring.fire{animation:none}}
+@media (max-width:759px){
+  #p3 .inner{padding:76px 24px 20px;gap:18px}
+  .remote{width:min(228px,64vw);padding:20px 18px 24px}
+  .rbtn.power{width:52px;height:52px;margin:0 auto 14px}
+  .dpad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);margin:0 auto 14px}
+  .dpad .rbtn{width:56px;height:56px}
+  .vch{margin-bottom:14px}
+  .vch .rbtn{width:46px;height:46px}
+  .magicbtn{padding:12px 18px}
+  .statusline{min-height:36px;margin-top:12px}
+  .padnote{margin-top:12px}
+  .btn{font-size:12px;padding:16px 24px}
 }
 </style>
 </head>
 <body>
 <header class="topbar">
-  <div class="wrap">
+  <div class="bar">
     <a class="wordmark" href="/remote/"><b>DOGS</b>&nbsp;REMOTE</a>
     <a class="cta" href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">GET THE APK</a>
   </div>
 </header>
 
 <main>
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">NATIVE ANDROID &middot; IR BLASTER</p>
-    <h1>One tap.<br><em>Any TV.</em></h1>
-    <p class="lede">DOGS Remote turns a phone with an IR blaster into a universal TV remote. No accounts, no ads, no cloud. It just works.</p>
-    <div class="hero-ctas">
-      <a class="btn primary" href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">DOWNLOAD APK <span class="sub">v0.1.0-ALPHA &middot; 8.4 MB</span></a>
-      <a class="btn ghost" href="#demo">TRY THE PAD</a>
-    </div>
-    <p class="micro">Requires a phone with an IR blaster. Debug build, free.</p>
+<!-- 1 / REMOTE -->
+<section class="panel" id="p1">
+  <div class="bg" data-px style="background-image:url('hero.jpg')" role="img" aria-label="Phone sending an infrared beam to a TV in a dark room"></div>
+  <div class="scrim"></div>
+  <div class="word" aria-hidden="true">REMOTE</div>
+  <div class="copy">
+    <p class="kicker rv">NATIVE ANDROID &middot; IR BLASTER</p>
+    <h2 class="rv" style="--d:90ms">One tap.<br><em>Any TV.</em></h2>
+    <a class="btn rv" style="--d:180ms" href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">GET THE APK <span class="sub2">v0.1.0-ALPHA</span></a>
+    <p class="micro rv" style="--d:260ms">Needs a phone with an IR blaster. Free.</p>
   </div>
 </section>
 
-<section class="demo" id="demo">
-  <div class="wrap demo-grid">
-    <div class="rv">
-      <div class="demo-head">
-        <h2>Press it.</h2>
-      </div>
-      <p class="lede" style="margin-top:12px">This is the shape of the thing. Every button below fires the same kind of IR pulse the app sends. Hit MAGIC to watch a variant sweep, Samsung first.</p>
-      <p class="demo-note" style="margin-top:16px">ILLUSTRATIVE DEMO &middot; THE APP SENDS REAL IR</p>
+<!-- 2 / MAGIC -->
+<section class="panel" id="p2">
+  <div class="bg" data-px style="background-image:url('magic.jpg')" role="img" aria-label="Phone screen glowing with a remote-control pad in the dark"></div>
+  <div class="scrim"></div>
+  <div class="word" aria-hidden="true">MAGIC</div>
+  <div class="copy">
+    <p class="kicker rv">01 / MAGIC MODE</p>
+    <h2 class="rv" style="--d:90ms">It answers.<br><em>You tap.</em></h2>
+    <p class="sub rv" style="--d:180ms">Magic Mode fires volume-up across variants, Samsung first. The moment the TV answers, tap IT WORKED — the brand is saved as a profile.</p>
+  </div>
+</section>
+
+<!-- 3 / PAD -->
+<section class="panel" id="p3">
+  <div class="word" aria-hidden="true">PRESS</div>
+  <div class="inner">
+    <div>
+      <p class="kicker rv">02 / THE PAD</p>
+      <h2 class="rv" style="--d:90ms">Press it.</h2>
+      <p class="sub rv" style="--d:180ms">The full manual pad — power, volume, channel, mute, input. Hit MAGIC to watch a variant sweep, Samsung first.</p>
+      <p class="padnote rv" style="--d:240ms">ILLUSTRATIVE DEMO &middot; THE APP SENDS REAL IR</p>
     </div>
-    <div class="pad-stage rv">
-      <div class="remote" role="img" aria-label="Interactive demo of the DOGS Remote pad">
-        <div class="ir-led" id="irLed" aria-hidden="true"></div>
-        <div class="ir-ring" id="irRing" aria-hidden="true"></div>
-        <button class="rbtn power" data-key="power" aria-label="Power">&#9211;</button>
-        <div class="dpad">
-          <span></span><button class="rbtn" data-key="up" aria-label="Up">&#9650;</button><span></span>
-          <button class="rbtn" data-key="left" aria-label="Left">&#9664;</button><button class="rbtn ok" data-key="ok" aria-label="OK">OK</button><button class="rbtn" data-key="right" aria-label="Right">&#9654;</button>
-          <span></span><button class="rbtn" data-key="down" aria-label="Down">&#9660;</button><span></span>
+    <div class="padwrap rv" style="--d:150ms">
+      <div>
+        <div class="remote" role="img" aria-label="Interactive demo of the DOGS Remote pad">
+          <div class="ir-led" id="irLed" aria-hidden="true"></div>
+          <div class="ir-ring" id="irRing" aria-hidden="true"></div>
+          <button class="rbtn power" data-key="power" aria-label="Power">&#9211;</button>
+          <div class="dpad">
+            <span></span><button class="rbtn" data-key="up" aria-label="Up">&#9650;</button><span></span>
+            <button class="rbtn" data-key="left" aria-label="Left">&#9664;</button><button class="rbtn ok" data-key="ok" aria-label="OK">OK</button><button class="rbtn" data-key="right" aria-label="Right">&#9654;</button>
+            <span></span><button class="rbtn" data-key="down" aria-label="Down">&#9660;</button><span></span>
+          </div>
+          <div class="vch">
+            <div class="col"><span>VOL</span><button class="rbtn" data-key="volup" aria-label="Volume up">+</button><button class="rbtn" data-key="voldn" aria-label="Volume down">&minus;</button></div>
+            <div class="col"><span>CH</span><button class="rbtn" data-key="chup" aria-label="Channel up">+</button><button class="rbtn" data-key="chdn" aria-label="Channel down">&minus;</button></div>
+          </div>
+          <button class="magicbtn" id="magicBtn">RUN MAGIC SWEEP</button>
         </div>
-        <div class="vch">
-          <div class="col"><span>VOL</span><button class="rbtn" data-key="volup" aria-label="Volume up">+</button><button class="rbtn" data-key="voldn" aria-label="Volume down">&minus;</button></div>
-          <div class="col"><span>CH</span><button class="rbtn" data-key="chup" aria-label="Channel up">+</button><button class="rbtn" data-key="chdn" aria-label="Channel down">&minus;</button></div>
-        </div>
-        <div class="magicrow"><button class="magicbtn" id="magicBtn">RUN MAGIC SWEEP</button></div>
+        <p class="statusline" id="statusLine" aria-live="polite">Tap any button.</p>
       </div>
     </div>
   </div>
-  <div class="wrap"><p class="statusline" id="statusLine" aria-live="polite">Tap any button.</p></div>
 </section>
 
-<section class="block" id="modes">
-  <div class="wrap">
-    <p class="kicker rv">FOUR VIEWS, ONE JOB</p>
-    <h2 class="rv">Find the TV.<br>Drive the TV.</h2>
-    <div class="modes">
-      <div class="mode rv"><h3><span class="n">01 / MAGIC</span>One tap, then it worked</h3><p><strong>Magic Mode</strong> fires volume-up codes across variants, Samsung first, as fast as the emitter allows. The moment the TV answers, tap <strong>IT WORKED</strong>, name the venue, and the brand is saved.</p></div>
-      <div class="mode rv"><h3><span class="n">02 / MANUAL</span>The full pad</h3><p><strong>Manual Mode</strong> is power, volume, channel, mute, input, arrows, menu, guide. Flip on <strong>blast mode</strong> to fire one button across every variant, rate-limited and cancellable.</p></div>
-      <div class="mode rv"><h3><span class="n">03 / PROFILES</span>Every TV you tame</h3><p>Saved TVs with venue nicknames. Rename, set a default, delete, or jump straight into the pad with <strong>Use</strong>.</p></div>
-      <div class="mode rv"><h3><span class="n">04 / LOG</span>Receipts</h3><p>The <strong>attempt log</strong> records every probe, transmit, and blast: variant, button, timestamp, and whether it worked.</p></div>
+<!-- 4 / CODES -->
+<section class="panel" id="p4">
+  <div class="bg" data-px style="background-image:url('codes.jpg')" role="img" aria-label="Infrared LED glowing on a circuit board"></div>
+  <div class="scrim"></div>
+  <div class="word" aria-hidden="true">CODES</div>
+  <div class="copy">
+    <p class="kicker rv">03 / THE DATABASE</p>
+    <h2 class="rv" style="--d:90ms">Audited codes.<br><em>Nothing invented.</em></h2>
+    <div class="nums rv" style="--d:180ms">
+      <div class="num"><b>11</b><span>BRANDS</span></div>
+      <div class="num"><b>146</b><span>BUTTONS</span></div>
+      <div class="num"><b>4/4</b><span>SELF-CHECKS</span></div>
     </div>
+    <p class="brands rv" style="--d:260ms">SAMSUNG &middot; LG &middot; SONY &middot; TCL <i>(unverified)</i> &middot; PHILIPS &middot; VIZIO &middot; PANASONIC &middot; SHARP &middot; TOSHIBA &middot; JVC &middot; INSIGNIA</p>
   </div>
 </section>
 
-<section class="block" id="database">
-  <div class="wrap">
-    <p class="kicker rv">THE IR DATABASE</p>
-    <h2 class="rv">Audited codes.<br>Nothing invented.</h2>
-    <div class="db rv">
-      <div class="nums">
-        <div class="num"><b>11</b><span>BRANDS</span></div>
-        <div class="num"><b>146</b><span>BUTTONS</span></div>
-        <div class="num"><b>4/4</b><span>SELF-CHECKS PASS</span></div>
-      </div>
-      <p>Every code is generated from real, published sources: crowd-sourced protocol tuples for the codes, published protocol definitions for the timings. The generator verifies itself against known-good captures before writing anything, and the shipped database is regression-tested on every build. Variants with inferred timings are flagged in the app until you confirm them on-device.</p>
-      <p class="brands">SAMSUNG &middot; LG &middot; SONY &middot; TCL <i>(unverified)</i> &middot; PHILIPS &middot; VIZIO &middot; PANASONIC &middot; SHARP &middot; TOSHIBA &middot; JVC &middot; INSIGNIA</p>
-    </div>
+<!-- 5 / NOTHING -->
+<section class="panel" id="p5">
+  <div class="bg" data-px style="background-image:url('offline.jpg')" role="img" aria-label="Dark living room with a phone on the couch and a glowing TV"></div>
+  <div class="scrim"></div>
+  <div class="word" aria-hidden="true">NOTHING</div>
+  <div class="copy">
+    <p class="kicker rv">04 / THE DEAL</p>
+    <h2 class="rv" style="--d:90ms">No accounts.<br><em>No ads. No cloud.</em></h2>
+    <p class="sub rv" style="--d:180ms">Native Kotlin, pure Jetpack Compose. Zero runtime permissions. Everything runs offline, on your phone.</p>
   </div>
 </section>
 
-<section class="block" id="facts">
-  <div class="wrap">
-    <p class="kicker rv">BUILT LIKE IT SHOULD BE</p>
-    <h2 class="rv">Your phone.<br>Your TV. Nothing between.</h2>
-    <div class="facts">
-      <div class="fact rv"><b>Native Kotlin</b><span>Pure Jetpack Compose. AndroidX and Kotlin only, no third-party SDKs.</span></div>
-      <div class="fact rv"><b>Zero runtime permissions</b><span>IR transmit is granted at install. The app asks you for nothing.</span></div>
-      <div class="fact rv"><b>Fully offline</b><span>Profiles and logs live in on-device storage. No cloud, no sync, no account.</span></div>
-      <div class="fact rv"><b>Cancellable by design</b><span>Sweeps and blasts are scoped jobs. Kill the app mid-blast and the emitter stops.</span></div>
-    </div>
+<!-- 6 / GET -->
+<section class="panel" id="p6">
+  <div class="word" aria-hidden="true">GET</div>
+  <div class="copy">
+    <p class="kicker rv">05 / GET IT</p>
+    <h2 class="rv" style="--d:90ms">Take the <em>remote.</em></h2>
+    <p class="sub rv" style="--d:140ms" >Alpha debug build for Android. Free, no account. Needs a phone with an IR blaster.</p>
+    <a class="btn rv" style="--d:200ms" href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">DOWNLOAD APK <span class="sub2">v0.1.0-ALPHA &middot; 8.4 MB</span></a>
+    <div class="dl-links rv" style="--d:260ms">Source and issues: <a href="https://github.com/YEAHDOGS/remote">github.com/YEAHDOGS/remote</a></div>
   </div>
 </section>
 
-<section class="block" id="download">
-  <div class="wrap">
-    <div class="dl rv">
-      <p class="kicker">GET IT</p>
-      <h3>Take the remote.</h3>
-      <p>Alpha debug build for Android. Free, no account. Needs a phone with an IR blaster, like the OnePlus 12R it was built on.</p>
-      <a class="btn primary" href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">DOWNLOAD APK <span class="sub">v0.1.0-ALPHA &middot; 8.4 MB</span></a>
-      <div class="dl-links">Source and issues: <a href="https://github.com/YEAHDOGS/remote">github.com/YEAHDOGS/remote</a></div>
-    </div>
-  </div>
-</section>
-
-<section class="block" id="faq">
-  <div class="wrap">
+<!-- 7 / FAQ -->
+<section class="panel" id="p7">
+  <div class="inner">
     <p class="kicker rv">QUESTIONS</p>
-    <h2 class="rv">Asked, answered.</h2>
-    <div class="faq rv">
+    <h2 class="rv" style="--d:90ms;font-family:var(--serif);font-weight:400;font-size:clamp(30px,7vw,46px)">Asked, <em style="font-style:italic;color:var(--red)">answered.</em></h2>
+    <div class="faq rv" style="--d:160ms">
       <details><summary>Does my phone need an IR blaster?</summary><p>Yes. The app drives your phone's built-in IR emitter. Phones without one cannot send signals, and the app tells you on launch if yours lacks it.</p></details>
-      <details><summary>Which TVs does it work with?</summary><p>Eleven brands and 146 buttons ship in the database: Samsung, LG, Sony, TCL, Philips, Vizio, Panasonic, Sharp, Toshiba, JVC, Insignia. Magic Mode sweeps variants starting with Samsung until your TV answers.</p></details>
+      <details><summary>Which TVs does it work with?</summary><p>Eleven brands and 146 buttons: Samsung, LG, Sony, TCL, Philips, Vizio, Panasonic, Sharp, Toshiba, JVC, Insignia. Magic Mode sweeps variants starting with Samsung until your TV answers.</p></details>
       <details><summary>What permissions does it ask for?</summary><p>None at runtime. The IR transmit permission is granted at install, and everything runs offline on your device.</p></details>
       <details><summary>How does Magic Mode work?</summary><p>One tap fires volume-up codes variant by variant, fastest first. When the TV responds, tap IT WORKED, name the venue, and the brand is saved as a profile.</p></details>
       <details><summary>Is it free?</summary><p>Yes. Alpha debug build, free to download, no accounts, no ads, no tracking.</p></details>
     </div>
+    <footer>
+      <nav class="fnav">
+        <a href="/remote/privacy.html">PRIVACY</a>
+        <a href="/remote/terms.html">TERMS</a>
+        <a href="https://github.com/YEAHDOGS/remote">SOURCE</a>
+      </nav>
+      <a class="badge" href="https://wearedogs.net" aria-label="This product was made by DOGS"><img src="made-by-dogs.png" alt="This product was made by DOGS" width="3584" height="1184"></a>
+    </footer>
   </div>
 </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <nav class="fnav">
-      <a href="/remote/privacy.html">PRIVACY</a>
-      <a href="/remote/terms.html">TERMS</a>
-      <a href="https://github.com/YEAHDOGS/remote">SOURCE</a>
-    </nav>
-    <p class="attr">This product was made by <a href="https://wearedogs.net">DOGS</a>.</p>
-  </div>
-</footer>
-
-<div class="sticky-cta"><a href="https://github.com/YEAHDOGS/remote/releases/download/v0.1.0-alpha/app-debug.apk">DOWNLOAD THE APK</a></div>
-
 <script>
 (function(){
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* staggered clip reveals on panel entry */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:.18});
+  document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+  /* parallax bg drift — transform only, rAF-throttled */
+  var bgs = Array.prototype.slice.call(document.querySelectorAll('[data-px]'));
+  var ticking = false;
+  function parallax(){
+    ticking = false;
+    if(reduce) return;
+    var vh = window.innerHeight;
+    bgs.forEach(function(bg){
+      var r = bg.parentElement.getBoundingClientRect();
+      if(r.bottom < -vh || r.top > vh*2) return;
+      var p = (r.top + r.height/2 - vh/2) / vh; /* -1..1 around viewport center */
+      bg.style.transform = 'translate3d(0,' + (p * -8).toFixed(2) + '%,0)';
+    });
+  }
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(parallax);
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  parallax();
+
+  /* interactive pad demo */
   var led = document.getElementById('irLed');
   var ring = document.getElementById('irRing');
   var status = document.getElementById('statusLine');
@@ -357,15 +399,6 @@ footer .wrap{display:flex;flex-direction:column;gap:14px}
       sweepTimers.push(setTimeout(step, 450));
     })();
   });
-
-  if(!reduce && 'IntersectionObserver' in window){
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, {threshold:.12});
-    document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
-  } else {
-    document.querySelectorAll('.rv').forEach(function(el){ el.classList.add('in'); });
-  }
 })();
 </script>
 </body>
